@@ -1,0 +1,258 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include<conio.h>
+#include <time.h>
+
+int M = 100000; // tamanho da tabela hash interno
+int N = 99999;  // tamanho do vetor aleatorio
+int P = 99998; // tamanho da tabela hash externo
+
+//Codigo para hash encadeamento interno
+
+typedef struct Hash
+{
+    int chave;
+    char livre; //L = livre, O = ocupado, R = removido
+} hash;
+
+int funcao_hashing(int num)
+{
+    return num%M;
+}
+
+void mostrar_hash(hash tabela[])
+{
+    for(int i=0; i<M; i++)
+        if (tabela[i].livre == 'O')
+            printf("\nEntrada %d : %d", i, tabela[i].chave);
+}
+
+void inserir(hash tabela[], int pos, int n)
+{
+    int i=0;
+    while(i<M && tabela[(pos+i)%M].livre!='L' && tabela[(pos+i)%M].livre!= 'R')
+        i=i+1;
+    if(i<M)
+    {
+        tabela[(pos+i)%M].chave=n;
+        tabela[(pos+i)%M].livre='O';
+    }
+    else
+        printf("\nTabela cheia!");
+}
+
+int buscar(hash tabela[], int n)
+{
+    int i=0;
+    int pos = funcao_hashing(n);
+
+    while(i<M && tabela[(pos+i)%M].livre!= 'L' && tabela[(pos+i)%M].chave != n)
+        i=i+1;
+    if (tabela[(pos+i)%M].chave ==n && tabela[(pos+i)%M].livre != 'R')
+        return (pos+i)%M;
+    else
+        return M; //nao encontrado
+}
+
+void remover(hash tabela[], int n)
+{
+    int posicao = buscar(tabela, n);
+
+    if (posicao <M)
+        tabela[posicao].livre = 'R';
+    else
+        printf("\nElemento nao esta presente.");
+}
+
+
+//Codigo para hash encadeamento externo
+
+typedef struct hash
+{
+    int chave;
+    struct hash2* prox;
+} hash2;
+
+void inserir2(hash2* tabela[], int pos, int n)
+{
+    hash2* novo;
+    novo = (hash2 *)malloc(sizeof(hash2));
+    novo->chave=n;
+    novo->prox = tabela[pos];
+    tabela[pos] = novo;
+}
+
+int funcao_hashing2(int num)
+{
+    return num % P;
+}
+
+void mostrar_hash2(hash2* tabela[])
+{
+    hash2* aux;
+    for(int i=0; i<P; i++)
+    {
+        aux = tabela[i];
+        while(aux != NULL)
+        {
+            printf("\nEntrada %d : %d", i, aux->chave);
+            aux = aux->prox;
+        }
+    }
+
+}
+
+void excluir_hash2(hash2* tabela[], int num)
+{
+    int pos= funcao_hashing2(num);
+    hash2* aux;
+
+    if(tabela[pos]!= NULL)
+    {
+        if(tabela[pos]->chave==num)
+        {
+            aux= tabela[pos];
+            tabela[pos]= tabela[pos]->prox;
+            free(aux);
+        }
+        else
+        {
+            aux=tabela[pos]->prox;
+            hash2* ant = tabela[pos];
+            while(aux!= NULL && aux->chave != num)
+            {
+                ant = aux;
+                aux = aux->prox;
+            }
+            if(aux!= NULL)
+            {
+                ant->prox=aux->prox;
+                free(aux);
+            }
+            else
+                printf("\nNumero nao encontrado");
+        }
+
+    }
+    else
+        printf("\nNumero nao encontrado");
+}
+
+int buscar2(hash2* tabela[], int num)
+{
+    int pos= funcao_hashing2(num);
+    hash2* aux;
+
+    if(tabela[pos]!= NULL)
+    {
+        if(tabela[pos]->chave==num)
+        {
+            return pos;
+        }
+        else
+        {
+            aux=tabela[pos]->prox;
+            hash2* ant = tabela[pos];
+            while(aux!= NULL && aux->chave != num)
+            {
+                ant = aux;
+                aux = aux->prox;
+            }
+            if(aux!= NULL)
+            {
+                return pos;
+
+            }
+            else
+                return P;
+        }
+
+    }
+    else
+        return P;
+}
+int main()
+{
+    //Hash interno
+
+    hash tabela[M];
+    int i;
+    //inicializaçao da tabela
+    for(i=0; i<M; i++)
+        tabela[i].livre= 'L';
+
+
+    //Hash externo
+
+    hash2* tabela2[P];
+    hash2* aux;
+    int j;
+    //inicializaçao da tabela
+    for(j=0; j<P; j++)
+        tabela2[j]= NULL;
+
+
+    //inicialização do vetor aleatorio
+    srand(time(NULL));
+    int vetor[N];
+    for(i=0; i<N; i++)
+    {
+        vetor[i]= rand() % 10000;
+    }
+
+    double inicio, fim, inicio2, fim2;
+
+    //insercao dos elementos do vetor aleatorio na tabela hash interno
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+        inserir(tabela, i, vetor[i]);
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para insercao do Hash interno: %f", fim-inicio);
+
+
+    //busca de todos os elementos
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+        buscar(tabela, vetor[i]);
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para busca do Hash interno: %f", fim-inicio);
+
+    //mostrar_hash(tabela);
+    printf("\n");
+
+
+    //insercao dos elementos do vetor aleatorio na tabela hash externo
+    inicio2 = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+        inserir2(tabela2, funcao_hashing2(vetor[i]), vetor[i]);
+    fim2 = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para insercao do Hash externo: %f", fim2-inicio2);
+
+    //busca de todos os elementos
+    inicio2 = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+        buscar2(tabela2, vetor[i]);
+    fim2 = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para busca do Hash externo: %f", fim2-inicio2);
+
+
+    //mostrar_hash2(tabela2);
+    printf("\n");
+
+
+
+
+    // desalocando memoria hash externo
+    for(i=0; i<P; i++)
+    {
+        while(tabela2[i]!= NULL)
+        {
+            aux= tabela2[i];
+            tabela2[i] = tabela2[i]->prox;
+            free(aux);
+        }
+        tabela2[i] = NULL;
+    }
+
+    return 0;
+}
