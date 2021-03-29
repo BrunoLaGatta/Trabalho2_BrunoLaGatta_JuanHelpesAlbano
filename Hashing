@@ -171,6 +171,7 @@ int buscar2(hash2* tabela[], int num)
     else
         return P;
 }
+
 int main()
 {
     //Hash interno
@@ -205,7 +206,7 @@ int main()
     //insercao dos elementos do vetor aleatorio na tabela hash interno
     inicio = (double) clock() / CLOCKS_PER_SEC;
     for(i=0; i<N; i++)
-        inserir(tabela, i, vetor[i]);
+        inserir(tabela, funcao_hashing(vetor[i]), vetor[i]);
     fim = (double) clock() / CLOCKS_PER_SEC;
     printf("\ntempo para insercao do Hash interno: %f", fim-inicio);
 
@@ -256,3 +257,5 @@ int main()
 
     return 0;
 }
+
+
