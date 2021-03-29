@@ -1,0 +1,456 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include<conio.h>
+#include <time.h>
+int N = 71000;
+
+//Codigo para arvore binaria nao balanceada
+
+typedef struct arvore
+{
+    int num;
+    struct ARVORE *esq,*dir;
+}ARVORE;
+
+
+ARVORE* inserir(ARVORE* aux, int num)
+{
+    if(aux==NULL)
+    {
+        aux = (ARVORE *)malloc(sizeof(ARVORE));
+        aux->num = num;
+        aux->esq = NULL;
+        aux->dir = NULL;
+    }
+    else if (num< aux->num)
+        aux->esq = inserir(aux->esq, num);
+    else
+        aux->dir = inserir(aux->dir, num);
+    return aux;
+}
+
+int consultar(ARVORE *aux, int num, int achou)
+{
+    if(aux!= NULL && achou ==0)
+    {
+        if(aux->num == num)
+        {
+            achou = 1;
+        }
+        else if(num<aux->num)
+            achou = consultar(aux->esq, num, achou);
+        else
+            achou = consultar(aux->dir, num, achou);
+    }
+    return achou;
+}
+
+void em_ordem(ARVORE *aux)
+{
+    if(aux != NULL)
+    {
+        em_ordem(aux->esq);
+        printf("%d ", aux->num);
+        em_ordem(aux->dir);
+    }
+}
+
+void pre_ordem(ARVORE *aux)
+{
+    if(aux != NULL)
+    {
+        printf("%d ", aux->num);
+        pre_ordem(aux->esq);
+        pre_ordem(aux->dir);
+    }
+}
+
+void pos_ordem(ARVORE *aux)
+{
+    if(aux != NULL)
+    {
+        pos_ordem(aux->esq);
+        pos_ordem(aux->dir);
+        printf("%d ", aux->num);
+    }
+}
+
+ARVORE* remover(ARVORE *aux, int num)
+{
+    ARVORE *p, *p2;
+    if(aux->num ==num)
+    {
+        if(aux->esq == aux->dir)
+        { // o elemento a ser removido não tem filhos
+            free(aux);
+            return NULL;
+        }
+        else if (aux->esq == NULL)
+        { // nao tem filho a esquerda
+            p = aux->dir;
+            free(aux);
+            return p;
+        }
+        else if(aux->dir == NULL)
+        { // nao tem filho a direita
+            p = aux->esq;
+            free(aux);
+            return p;
+        }
+        else
+        { // tem filho para ambos os lados
+            p2 = aux->dir;
+            p = aux->dir;
+            while (p->esq != NULL)
+            {
+                p = p->esq;
+            }
+            p->esq = aux->esq;
+            free(aux);
+            return p2;
+        }
+    }
+    else if(aux->num < num)
+        aux->dir = remover(aux->dir, num);
+    else
+        aux->esq = remover(aux->esq, num);
+    return aux;
+}
+
+ARVORE* desalocar ( ARVORE* aux)
+{
+    if(aux != NULL)
+    {
+        aux->esq = desalocar(aux->esq);
+        aux->dir = desalocar(aux->dir);
+        free(aux);
+    }
+    return NULL;
+}
+
+// codigo para arvore binaria balanceada (AVL)
+
+typedef struct ARVORE
+{
+    int num, altd, alte;
+    struct ARVORE *dir, *esq;
+} ARVORE2;
+
+ARVORE2 * rotacao_esquerda(ARVORE2* aux)
+{
+    ARVORE2 *aux1, *aux2;
+    aux1 = aux->dir;
+    aux2 = aux1->esq;
+    aux->dir = aux2;
+    aux1->esq = aux;
+
+    if(aux->dir == NULL)
+        aux->altd = 0;
+    else if(aux->dir->alte > aux->dir->altd)
+        aux->altd = aux->dir->alte+1;
+    else
+        aux->altd = aux->dir->altd+1;
+
+    if(aux1->esq->alte > aux1->esq->altd)
+        aux1->alte = aux1->esq->alte +1;
+    else
+        aux1->alte = aux1->esq->altd+1;
+    return aux1;
+}
+
+ARVORE2 * rotacao_direita(ARVORE2* aux)
+{
+    ARVORE2 *aux1, *aux2;
+    aux1 = aux->esq;
+    aux2 = aux1->dir;
+    aux->esq = aux2;
+    aux1->dir = aux;
+
+    if(aux->esq == NULL)
+        aux->alte = 0;
+    else if(aux->esq->alte > aux->esq->altd)
+        aux->alte = aux->esq->alte+1;
+    else
+        aux->alte = aux->esq->altd+1;
+
+    if(aux1->dir->alte > aux1->dir->altd)
+        aux1->altd = aux1->dir->alte +1;
+    else
+        aux1->altd = aux1->dir->altd+1;
+    return aux1;
+}
+
+ARVORE2* balanceamento(ARVORE2 *aux)
+{
+    int d, df;
+    d = aux->altd - aux->alte;
+    if(d==2)
+    {
+        df = aux->dir->altd - aux->dir->alte;
+        if(df >= 0)
+        {
+            aux = rotacao_esquerda(aux);
+        }
+        else
+        {
+            aux->dir = rotacao_direita(aux->dir);
+            aux = rotacao_esquerda(aux);
+        }
+    }
+    else if(d == -2)
+    {
+        df = aux->esq->altd - aux->esq->alte;
+        if(df<=0)
+        {
+            aux = rotacao_direita(aux);
+        }
+        else
+        {
+            aux->esq = rotacao_esquerda(aux->esq);
+            aux = rotacao_direita(aux);
+        }
+    }
+    return aux;
+}
+
+ARVORE2* inserir2(ARVORE2 *aux, int num)
+{
+    ARVORE2 *novo;
+    if(aux == NULL)
+    {
+        novo = (ARVORE2 *)malloc(sizeof(ARVORE2));
+        novo->num = num;
+        novo->altd = 0;
+        novo->alte = 0;
+        novo->esq = NULL;
+        novo->dir = NULL;
+        aux = novo;
+    }
+    else if(num < aux->num)
+    {
+        aux->esq=inserir2(aux->esq, num);
+        if(aux->esq->altd > aux->esq->alte)
+            aux->alte = aux->esq->altd + 1;
+        else
+            aux->alte = aux->esq->alte + 1;
+        aux = balanceamento(aux);
+    }
+    else
+    {
+        aux->dir=inserir2(aux->dir, num);
+        if(aux->dir->altd > aux->dir->alte)
+            aux->altd = aux->dir->altd + 1;
+        else
+            aux->altd = aux->dir->alte + 1;
+        aux = balanceamento(aux);
+    }
+    return aux;
+}
+
+//vai dar erro
+int consultar2(ARVORE2* aux, int num, int achou)
+{
+    if(aux != NULL && achou == 0)
+    {
+        if (aux->num == num)
+        {
+            achou = 1;
+        }
+        else if(num < aux->num)
+            achou = consultar2(aux->esq, num, achou);
+        else
+            achou = consultar2(aux->dir, num, achou);
+    }
+    return achou;
+}
+
+void mostraremordem(ARVORE2* aux)
+{
+    if(aux!=NULL)
+    {
+        mostraremordem(aux->esq);
+        printf("%d", aux->num);
+        mostraremordem(aux->dir);
+    }
+}
+
+void mostrarpreordem(ARVORE2* aux)
+{
+    if(aux!=NULL)
+    {
+        printf("%d", aux->num);
+        mostraremordem(aux->esq);
+        mostraremordem(aux->dir);
+    }
+}
+
+void mostrarposordem(ARVORE2* aux)
+{
+    if(aux!=NULL)
+    {
+        mostraremordem(aux->esq);
+        mostraremordem(aux->dir);
+        printf("%d", aux->num);
+    }
+}
+
+ARVORE2* remover2(ARVORE2* aux, int num)
+{
+    ARVORE2 *p, *p2;
+    if(aux->num == num)
+    {
+        if(aux->esq == aux->dir)
+        {
+            free(aux);
+            return NULL;
+        }
+        else if (aux->esq == NULL)
+        {
+            p = aux->dir;
+            free(aux);
+            return p;
+        }
+        else if (aux->dir == NULL)
+        {
+            p = aux->esq;
+            free(aux);
+            return p;
+        }
+        else
+        {
+            p2 = aux->dir;
+            p = aux->dir;
+            while(p->esq != NULL)
+            {
+                p = p->esq;
+            }
+            p->esq = aux->esq;
+            free(aux);
+            return p2;
+        }
+    }
+    else if (aux->num < num)
+        aux->dir = remover2(aux->dir, num);
+    else
+        aux->esq = remover2(aux->esq, num);
+    return aux;
+}
+
+ARVORE2* atualiza(ARVORE2 *aux)
+{
+    if(aux!=NULL)
+    {
+        aux->esq = atualiza(aux->esq);
+        if(aux->esq==NULL)
+            aux->alte = 0;
+        else if (aux->esq->alte > aux->esq->altd)
+            aux->alte = aux->esq->alte + 1;
+        else
+            aux->alte = aux->esq->altd + 1;
+
+        aux->dir = atualiza(aux->dir);
+        if (aux->dir == NULL)
+            aux->altd = 0;
+        else if(aux->dir->alte > aux->dir->altd)
+            aux->altd = aux->dir->alte + 1;
+        else
+            aux->altd = aux->dir->altd + 1;
+
+        aux = balanceamento(aux);
+    }
+    return aux;
+}
+
+ARVORE2* desalocar2(ARVORE2* aux)
+{
+    if(aux!=NULL)
+    {
+        aux->esq=desalocar2(aux->esq);
+        aux->dir=desalocar2(aux->dir);
+        free(aux);
+    }
+    return NULL;
+}
+
+int main()
+{
+    ARVORE *raiz = NULL;
+    ARVORE2 *raiz2 = NULL;
+    int i, vetor[N];
+    double inicio, fim;
+
+
+    //inicialização do vetor aleatorio
+    srand(time(NULL));
+    for(i=0; i<N; i++)
+    {
+        vetor[i]= rand() % 10000;
+    }
+
+    // inserção na arvore binaria nao balanceada
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        raiz = inserir(raiz, vetor[i]);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para insercao na arvore binaria nao balanceada: %f", fim-inicio);
+
+    // busca de todos os elementos na arvore nao balanceada
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        consultar(raiz, vetor[i], 0);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para busca de todos elementos na arvore binaria nao balanceada: %f", fim-inicio);
+
+    // remoção de todos os elementos da arvore binaria nao balanceada
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        raiz = remover(raiz, vetor[i]);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para remocao dos elementos na arvore binaria nao balanceada: %f", fim-inicio);
+
+    //em_ordem(raiz);
+    //pos_ordem(raiz);
+    //pre_ordem(raiz);
+
+    printf("\n");
+    printf("\n");
+
+    // inserção na arvore binaria balanceada (AVL)
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        raiz2 = inserir2(raiz2, vetor[i]);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para insercao na arvore binaria balanceada: %f", fim-inicio);
+
+    // busca de todos os elementos na arvore balanceada (AVL)
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        consultar2(raiz2, vetor[i], 0);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para busca de todos elementos na arvore binaria balanceada: %f", fim-inicio);
+
+    // remoção de todos os elementos da arvore binaria balanceada (AVL)
+    inicio = (double) clock() / CLOCKS_PER_SEC;
+    for(i=0; i<N; i++)
+    {
+        raiz2 = remover2(raiz2, vetor[i]);
+    }
+    fim = (double) clock() / CLOCKS_PER_SEC;
+    printf("\ntempo para remocao dos elementos na arvore binaria balanceada: %f", fim-inicio);
+
+    //mostraremordem(raiz2);
+    //mostrarposordem(raiz2);
+    //mostrarpreordem(raiz2);
+
+    return 0;
+}
